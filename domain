@@ -1,92 +1,169 @@
-(define (domain mars-exploration)
-(:predicates (visible-pos ?p)
-             (analysed ?p)
-             (soil-analysed ?p)
-             (rock-analysed ?p)
-             (at ?p1)
-             (connection ?p1 ?p2)
-             (visited ?p)
-             (empty ?c)
-             (soil-sample ?s ?p)
-             (rock-sample ?s ?p)
-             (soil-container ?s)
-             (rock-container ?s)
-             (level ?l)
-             (battery ?b)
-             (battery-level ?b ?l)
-             (next ?l1 ?l2)
-             (critical ?l))
-
-
-(:action move
-    :parameters(?current-pos ?next-pos ?battery ?level-current ?level-next)
-    :precondition(and (visible-pos ?current-pos) (visible-pos ?next-pos)
-                      (at ?current-pos) (connection ?current-pos ?next-pos)
-                      (level ?level-current) (level ?level-next)
-                      (battery-level ?battery ?level-current)
-                      (next ?level-next ?level-current)
-                      (not (critical ?level-current))
-                      )
-    :effect(and (at ?next-pos) (not (at ?current-pos)) (visited ?next-pos)
-                (not (battery-level ?battery ?level-current)) (battery-level ?battery ?level-next)
-    )
-)
-
-
-(:action collect-soil
-    :parameters (?current-pos ?container)
-    :precondition (and (at ?current-pos) (soil-container ?container) (empty ?container))
-    :effect(and (not (empty ?container)) (soil-sample ?container ?current-pos) )
-)
-
-(:action analyse-soil
-    :parameters(?container ?pos)
-    :precondition (and (soil-container ?container) (visible-pos ?pos) (soil-sample ?container ?pos))
-    :effect (soil-analysed ?pos)
-) 
-
-(:action empty-soil-container
-    :parameters (?container ?pos)
-    :precondition (and (soil-container ?container) (visible-pos ?pos) (soil-sample ?container ?pos) (not (empty ?container)) (soil-analysed ?pos))
-    :effect (empty ?container)
-)
-
-
-(:action collect-rock
-    :parameters (?current-pos ?container)
-    :precondition (and (at ?current-pos) (rock-container ?container) (empty ?container))
-    :effect(and (not (empty ?container)) (rock-sample ?container ?current-pos) )
-)
-
-(:action analyse-rock
-    :parameters(?container ?pos)
-    :precondition (and (rock-container ?container) (visible-pos ?pos) (rock-sample ?container ?pos))
-    :effect (rock-analysed ?pos)
-) 
-
-(:action empty-rock-container
-    :parameters (?container ?pos)
-    :precondition (and (rock-container ?container) (visible-pos ?pos) (rock-sample ?container ?pos) (not (empty ?container)) (rock-analysed ?pos))
-    :effect (empty ?container)
-)
-
-
-(:action charge
-    :parameters (?battery ?level-current ?level-next)
-    :precondition (and (battery ?battery) (level ?level-current) 
-                       (level ?level-next) (battery-level ?battery ?level-current)
-                       (next ?level-current ?level-next) (critical ?level-current)
-                   )
-    :effect (and (not (battery-level ?battery ?level-current)) (battery-level ?battery ?level-next))
-)
-
-)
-
-
 ;(when (not (visited ?next-pos)) (and (at ?next-pos) (not (at ?current-pos)) (visited ?next-pos)))
+
 ;defineste niveluri de dificultate pentru actiuni
 ;defineste cata energie primeste de la fiecare coordonata 
 ;eventual se face asta cu contingent planning - sa isi intoarca panourile solare si sa isi dea seama de unde 
 ;primeste mai multa energie
 ;sa am mai multe actiuni
 ;vartejuri care sa il curete
+
+;sensing pe partea cu cum se misca panel-urile
+
+;am facut max light pe panel-uri - sa fie mereu 4
+;daca e lumina pe panel 1 - merge in fata x, y++
+;daca e lumina pe panel 2 - merge in dreapta x, y--
+;daca e lumina pe panel 3 - merge in spate x++, y
+;daca e lumina pe panel 4 - merge in stanga x--, y
+
+
+(define (domain mars-exploration)
+(:predicates (loc ?p)
+             (at ?x ?y)
+             (connection ?p1 ?p2)
+             (visited ?x ?y)
+             (soil-analysed ?x ?y)
+             (rock-analysed ?x ?y)
+             (empty ?c)
+             (soil-sample ?s ?x ?y)
+             (rock-sample ?s ?x ?y)
+             (soil-container ?s)
+             (rock-container ?s)
+             (level ?l)
+             (battery ?b)
+             (battery-level ?b ?l)
+             (next ?l1 ?l2)
+             (critical ?l)
+             (inc-x ?x1 ?x2)
+             (dec-x ?x1 ?x2)
+             (inc-y ?y1 ?y2)
+             (dec-y ?y1 ?y2)
+             (same ?x1 ?x2)
+             (action ?a)
+             (easy ?a)
+             (medium ?a)
+             (hard ?a)
+             (next-easy ?l1 ?l2)
+             (next-medium ?l1 ?l2)
+             (next-hard ?l1 ?l2) )
+
+;;;;;;;;;;;;;;;;movement;;;;;;;;;;;;;;;;;;
+(:action move
+    :parameters(?current-pos-x ?current-pos-y
+                ?next-pos-x ?next-pos-y
+                ?battery ?level-current ?level-next)
+    :precondition(and (loc ?current-pos-x) (loc ?current-pos-y)
+                      (loc ?next-pos-x) (loc ?next-pos-y)
+                      (at ?current-pos-x ?current-pos-y) 
+                      (connection ?current-pos-x ?next-pos-x)
+                      (connection ?current-pos-y ?next-pos-y)
+                      (level ?level-current) (level ?level-next)
+                      (battery-level ?battery ?level-current)
+                      (next-easy ?level-current ?level-next)
+                      (not (critical ?level-current))
+                      )
+    :effect(and (at ?next-pos-x ?next-pos-y) 
+                (not (at ?current-pos-x ?current-pos-y)) 
+                (visited ?next-pos-x ?next-pos-y)
+                (not (battery-level ?battery ?level-current)) 
+                (battery-level ?battery ?level-next)
+    )
+)
+
+;;;;;;;;;;;;;;;;soil;;;;;;;;;;;;;;;;;;
+(:action collect-soil
+    :parameters (?current-pos-x ?current-pos-y ?container
+                 ?battery ?level-current ?level-next)
+    :precondition (and (loc ?current-pos-x) (loc ?current-pos-y)
+                       (at ?current-pos-x ?current-pos-y) 
+                       (soil-container ?container) 
+                       (empty ?container)
+                       ;(action ?action)
+                       (battery-level ?battery ?level-current)
+                       (next-easy ?level-current ?level-next) 
+                       (not (critical ?level-current))
+                  )
+    :effect(and (not (empty ?container)) 
+                (soil-sample ?container ?current-pos-x ?current-pos-y)
+                (not (battery-level ?battery ?level-current)) 
+                (battery-level ?battery ?level-next)
+                
+                ;(when (easy ?action) (next-easy ?battery ?level-current ?level-next))
+           )
+)
+
+(:action analyse-soil
+    :parameters (?container ?pos-x ?pos-y
+                 ?battery ?level-current ?level-next)
+    :precondition (and (loc ?pos-x) (loc ?pos-y)
+                       (soil-container ?container) 
+                       (soil-sample ?container ?pos-x ?pos-y)
+                       (battery-level ?battery ?level-current)
+                       (next-hard ?level-current ?level-next) 
+                       (not (critical ?level-current))
+                  )
+    :effect(and (soil-analysed ?pos-x ?pos-y)
+                (not (battery-level ?battery ?level-current)) 
+                (battery-level ?battery ?level-next)
+           )
+) 
+
+(:action empty-soil-container
+    :parameters (?container ?pos-x ?pos-y)
+    :precondition (and (loc ?pos-x) (loc ?pos-y)
+                       (soil-container ?container)
+                       (soil-sample ?container ?pos-x ?pos-y) 
+                       (not (empty ?container))
+                       (soil-analysed ?pos-x ?pos-y))
+    :effect (empty ?container)
+)
+
+;;;;;;;;;;;;;;;;rock;;;;;;;;;;;;;;;;;;
+(:action collect-rock
+    :parameters (?current-pos-x ?current-pos-y ?container)
+    :precondition (and (loc ?current-pos-x) (loc ?current-pos-y)
+                       (at ?current-pos-x ?current-pos-y) 
+                       (rock-container ?container) 
+                       (empty ?container))
+    :effect(and (not (empty ?container)) 
+                     (rock-sample ?container ?current-pos-x ?current-pos-y) )
+)
+
+(:action analyse-rock
+    :parameters (?container ?pos-x ?pos-y)
+    :precondition (and (loc ?pos-x) (loc ?pos-y)
+                       (rock-container ?container) 
+                       (rock-sample ?container ?pos-x ?pos-y))
+    :effect (rock-analysed ?pos-x ?pos-y)
+) 
+
+(:action empty-rock-container
+    :parameters (?container ?pos-x ?pos-y)
+    :precondition (and (loc ?pos-x) (loc ?pos-y)
+                       (rock-container ?container)
+                       (rock-sample ?container ?pos-x ?pos-y) 
+                       (not (empty ?container))
+                       (rock-analysed ?pos-x ?pos-y))
+    :effect (empty ?container)
+)
+
+
+;;;;;;;;;;;;;;;;charging;;;;;;;;;;;;;;;;;;
+
+(:action charge
+    :parameters (?battery ?level-current ?level-next)
+    :precondition (and (battery ?battery) 
+                       (level ?level-current) 
+                       (level ?level-next)
+                       (battery-level ?battery ?level-current)
+                       (next ?level-current ?level-next) 
+                       (critical ?level-current)
+                  )
+    :effect (and (not (battery-level ?battery ?level-current)) 
+                 (battery-level ?battery ?level-next)
+            )
+)
+
+; (:action move-panels
+;     :parameters (?)
+; )
+)
