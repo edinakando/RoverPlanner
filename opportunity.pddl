@@ -1,15 +1,12 @@
 (define (problem prob-matrix-visible)
 (:domain mars-exploration)
-(:objects visible-pos00 visible-pos01 visible-pos02
-          visible-pos10 visible-pos11 visible-pos12
-          visible-pos20 visible-pos21 visible-pos22
+(:objects x0 x1 x2 y0 y1 y2
           soil-container rock-container 
           battery
-          level-100 level-80 level-60 level-40 level-20 level-0 
-          level-10 level-30 level-50 
+          level-100 level-80 level-70 level-60 level-50 
+          level-40 level-30 level-20 level-10 level-0 
           panel1 panel2 panel3 panel4
-          x0 x1 x2 y0 y1 y2
-          action
+          action soil storage
 )
 (:init 
     (loc x0)
@@ -57,6 +54,24 @@
     (unknown (soil-analysed x2 y1))
     (unknown (soil-analysed x2 y2))
 
+    (unknown (rock-analysed x0 y1))
+    (unknown (rock-analysed x0 y2))
+    (unknown (rock-analysed x1 y0))
+    (unknown (rock-analysed x1 y1))
+    (unknown (rock-analysed x1 y2))
+    (unknown (rock-analysed x2 y0))
+    (unknown (rock-analysed x2 y1))
+    (unknown (rock-analysed x2 y2))
+
+    (unknown (image-taken x0 y1))
+    (unknown (image-taken x0 y2))
+    (unknown (image-taken x1 y0))
+    (unknown (image-taken x1 y1))
+    (unknown (image-taken x1 y2))
+    (unknown (image-taken x2 y0))
+    (unknown (image-taken x2 y1))
+    (unknown (image-taken x2 y2))
+
     (unknown (visited x0 y1))
     (unknown (visited x0 y2))
     (unknown (visited x1 y0))
@@ -70,83 +85,74 @@
 
     (soil-container soil-container)
     (rock-container rock-container)
+    (image-storage storage)
     (empty soil-container)
     (empty rock-container)
-
-    ; (unknown (soil-analysed visible-pos01))
-    ; (unknown (soil-analysed visible-pos02))
-    ; (unknown (soil-analysed visible-pos10))
-    ; (unknown (soil-analysed visible-pos11))
-    ; (unknown (soil-analysed visible-pos12))
-    ; (unknown (soil-analysed visible-pos20))
-    ; (unknown (soil-analysed visible-pos21))
-    ; (unknown (soil-analysed visible-pos22))
-
-    ; (unknown (rock-analysed visible-pos01))
-    ; (unknown (rock-analysed visible-pos02))
-    ; (unknown (rock-analysed visible-pos10))
-    ; (unknown (rock-analysed visible-pos11))
-    ; (unknown (rock-analysed visible-pos12))
-    ; (unknown (rock-analysed visible-pos20))
-    ; (unknown (rock-analysed visible-pos21))
-    ; (unknown (rock-analysed visible-pos22))
-
-
-    ; (level level-100)
-    ; (level level-80)
-    ; (level level-60)
-    ; (level level-40)
-    ; (level level-20)
-    ; (level level-0)
-
-    ; (next level-0 level-20)
-    ; (next level-20 level-40)
-    ; (next level-40 level-60)
-    ; (next level-60 level-80)
-    ; (next level-80 level-100)
      
     ; (level level-100)
     ; (level level-90)
     ; (level level-80)
-    ; (level level-70)
-    ; (level level-60)
+    (level level-70)
+    (level level-60)
     (level level-50)
     (level level-40)
     (level level-30)
     (level level-20)
     (level level-10)
     (level level-0)
-
-    (next level-0 level-10)
-    (next level-10 level-20)
-    (next level-20 level-30)
-    (next level-30 level-40)
-    (next level-40 level-50)
-
-    (unknown (easy action))
-    (unknown (medium action))
-    (unknown (hard action))
-
-    (oneof
-        (easy action)
-        (medium action)
-        (hard action)
-    )
-
+    
     (action action)
 
+    (easy-rock x0 y0)
+    (easy-rock x0 y1)
+    (easy-rock x0 y2)
+    (medium-rock x1 y0)
+    (medium-rock x1 y1)
+    (medium-rock x1 y2)
+    (hard-rock x2 y0)
+    (hard-rock x2 y1)
+    (hard-rock x2 y2)
+    (medium-soil x0 y0)
+    (medium-soil x0 y1)
+    (medium-soil x0 y2)
+    (hard-soil x1 y0)
+    (hard-soil x1 y1)
+    (hard-soil x1 y2)
+    (easy-soil x2 y0)
+    (easy-soil x2 y1)
+    (easy-soil x2 y2)
+
+    ;(hard action)
+
+    ; (soil soil)
+    ; (unknown (easy soil))
+    ; (unknown (medium soil))
+    ; (unknown (hard soil))
+
+    ; (oneof
+    ;     (easy soil)
+    ;     (medium soil)
+    ;     (hard soil)
+    ; )
+
+    (next-easy level-70 level-60)
+    (next-easy level-60 level-50)
     (next-easy level-50 level-40)
     (next-easy level-40 level-30)
     (next-easy level-30 level-20)
     (next-easy level-20 level-10)
     (next-easy level-10 level-0)
 
+    (next-medium level-70 level-50)
+    (next-medium level-60 level-40)
     (next-medium level-50 level-30)
     (next-medium level-40 level-20)
     (next-medium level-30 level-10)
     (next-medium level-20 level-0)
     (next-medium level-10 level-0)
 
+    (next-hard level-70 level-40)
+    (next-hard level-60 level-30)
     (next-hard level-50 level-20)
     (next-hard level-40 level-10)
     (next-hard level-30 level-0)
@@ -154,16 +160,17 @@
     (next-hard level-10 level-0)
 
     (battery battery)
-    (battery-level battery level-50)  ;change
+    (battery-level battery level-70)  ;change
 
-    (next level-0 level-10)
-    (next level-10 level-20)
-    (next level-20 level-30)
-    (next level-30 level-40)
-    (next level-40 level-50)
-    (next level-50 level-50)
+    (next-charge level-0 level-70)
+    (next-charge level-10 level-70)
+    (next-charge level-20 level-70)
+    (next-charge level-30 level-70)
+    (next-charge level-40 level-70)
+    (next-charge level-50 level-70)
+    (next-charge level-60 level-70)
+    (next-charge level-70 level-70)
 
-    (critical level-30)
     (critical level-20)
     (critical level-10)
     (critical level-0)
@@ -182,34 +189,16 @@
 )
 (:goal
     (and
-        ; (visited visible-pos01)
-        ; (visited visible-pos02)
-        ; (visited visible-pos10)
-        ; (visited visible-pos11)
-        ; (visited visible-pos12)
-        ; (visited visible-pos20)
-        ; (visited visible-pos21)
-        ; (visited visible-pos22)
-        ; (soil-analysed visible-pos01)
-        ; (rock-analysed visible-pos01)
-        ; (soil-analysed visible-pos02)
-        ; (soil-analysed visible-pos10)
-        ; (soil-analysed visible-pos11)
-        ; (rock-analysed visible-pos12)
-        ; (rock-analysed visible-pos20)
-        ; (rock-analysed visible-pos21)
-        ; (rock-analysed visible-pos22)
-
         (soil-analysed x0 y1)
         (rock-analysed x0 y1)
         (soil-analysed x0 y2)
         (soil-analysed x1 y0)
-
+        (rock-analysed x2 y0)
         (visited x0 y1)
-        ;(visited x2 y1)
-
-        ;(visited x0 y2)
-        ;(visited x1 y0)
+        (image-taken x1 y2)
+        (image-taken x0 y1)
+        (image-taken x1 y1)
     )
 )
 )
+
