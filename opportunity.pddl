@@ -6,7 +6,7 @@
           level-100 level-80 level-70 level-60 level-50 
           level-40 level-30 level-20 level-10 level-0 
           panel1 panel2 panel3 panel4
-          action soil storage
+          soil storage
 )
 (:init 
     (loc x0)
@@ -16,21 +16,21 @@
     (loc y1)
     (loc y2)
 
-    (inc-x x0 x1)
-    (inc-x x1 x2)
-    (dec-x x2 x1)
-    (dec-x x1 x0)
-    (same x0 x0)
-    (same x1 x1)
-    (same x2 x2)
+    ; (inc-x x0 x1)
+    ; (inc-x x1 x2)
+    ; (dec-x x2 x1)
+    ; (dec-x x1 x0)
+    ; (same x0 x0)
+    ; (same x1 x1)
+    ; (same x2 x2)
 
-    (inc-y y0 y1)
-    (inc-y y1 y2)
-    (dec-y y2 y1)
-    (dec-y y1 y0)
-    (same y0 y0)
-    (same y1 y1)
-    (same y2 y2)
+    ; (inc-y y0 y1)
+    ; (inc-y y1 y2)
+    ; (dec-y y2 y1)
+    ; (dec-y y1 y0)
+    ; (same y0 y0)
+    ; (same y1 y1)
+    ; (same y2 y2)
 
     (at x0 y0)
 
@@ -101,8 +101,6 @@
     (level level-10)
     (level level-0)
     
-    (action action)
-
     (easy-rock x0 y0)
     (easy-rock x0 y1)
     (easy-rock x0 y2)
@@ -121,19 +119,6 @@
     (easy-soil x2 y0)
     (easy-soil x2 y1)
     (easy-soil x2 y2)
-
-    ;(hard action)
-
-    ; (soil soil)
-    ; (unknown (easy soil))
-    ; (unknown (medium soil))
-    ; (unknown (hard soil))
-
-    ; (oneof
-    ;     (easy soil)
-    ;     (medium soil)
-    ;     (hard soil)
-    ; )
 
     (next-easy level-70 level-60)
     (next-easy level-60 level-50)
@@ -175,17 +160,27 @@
     (critical level-10)
     (critical level-0)
 
-    ; (unknown (max-light panel1))
-    ; (unknown (max-light panel2))
-    ; (unknown (max-light panel3))
-    ; (unknown (max-light panel4))
+    (panel panel1)
+    (panel panel2)
+    (panel panel3)
+    (panel panel4)
 
-    ; (oneof
-    ;     (max-light panel1)
-    ;     (max-light panel2)
-    ;     (max-light panel3)
-    ;     (max-light panel4)
-    ; )
+    (closed panel1)
+    (closed panel2)
+    (closed panel3)
+    (closed panel4)
+
+    (unknown (max-light panel1))
+    (unknown (max-light panel2))
+    (unknown (max-light panel3))
+    (unknown (max-light panel4))
+
+    (oneof
+        (max-light panel1)
+        (max-light panel2)
+        (max-light panel3)
+        (max-light panel4)
+    )
 )
 (:goal
     (and
@@ -198,6 +193,8 @@
         (image-taken x1 y2)
         (image-taken x0 y1)
         (image-taken x1 y1)
+        (panel-opened)
+        ;(not (closed panel2))
     )
 )
 )
