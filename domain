@@ -1,21 +1,3 @@
-;(when (not (visited ?next-pos)) (and (at ?next-pos) (not (at ?current-pos)) (visited ?next-pos)))
-
-;defineste niveluri de dificultate pentru actiuni
-;defineste cata energie primeste de la fiecare coordonata 
-;eventual se face asta cu contingent planning - sa isi intoarca panourile solare si sa isi dea seama de unde 
-;primeste mai multa energie
-;sa am mai multe actiuni
-;vartejuri care sa il curete
-
-;sensing pe partea cu cum se misca panel-urile
-
-;am facut max light pe panel-uri - sa fie mereu 4
-;daca e lumina pe panel 1 - merge in fata x, y++
-;daca e lumina pe panel 2 - merge in dreapta x, y--
-;daca e lumina pe panel 3 - merge in spate x++, y
-;daca e lumina pe panel 4 - merge in stanga x--, y
-
-
 (define (domain mars-exploration)
 (:predicates (loc ?p)
              (at ?x ?y)
@@ -33,11 +15,11 @@
              (battery ?b)
              (battery-level ?b ?l)
              (critical ?l)
-            (next-easy ?l1 ?l2)
+             (next-easy ?l1 ?l2)
              (next-medium ?l1 ?l2)
              (next-hard ?l1 ?l2)
              (next-charge ?l1 ?l2)
-             (easy-rock ?x ?y)
+     (easy-rock ?x ?y)
              (medium-rock ?x ?y)
              (hard-rock ?x ?y)
              (easy-soil ?x ?y)
@@ -47,14 +29,27 @@
              (panel ?p)
              (max-light ?p)
              (panel-opened)
-             (closed ?p))
+            (dust-at ?x ?y)
+  (windwhirl-at ?x ?y)
+             (dust-thickness ?l)
+             (dust-next ?l1 ?l2)
+             (dust-on-panels ?l)
+             (max-dust-thickness ?l)
+             ;I cannot add this logic anymore since the number of predicates won't allow me
+             ;I will nontheless leave it here since I find it quite important
+             ;(min-dust-thickness ?l)  
+             ;(medium-dust-thickness ?l)
+             ;(none-dust-thickness ?l)
+)
 
 ;;;;;;;;;;;;;;;;movement;;;;;;;;;;;;;;;;;;
 (:action move
     :parameters(?current-pos-x ?current-pos-y
                 ?next-pos-x ?next-pos-y
                 ?battery ?level-current 
-                ?level-next-easy ?level-next-medium ?level-next-hard)
+                ?level-next-easy ?level-next-medium ?level-next-hard
+                ?dust-thickness-current ?dust-thickness-next
+               )
     :precondition(and (loc ?current-pos-x) (loc ?current-pos-y)
                       (loc ?next-pos-x) (loc ?next-pos-y)
                       (at ?current-pos-x ?current-pos-y) 
@@ -68,6 +63,11 @@
                       (next-medium ?level-current ?level-next-medium)
                       (next-hard ?level-current ?level-next-hard)
                       (not (critical ?level-current))
+
+                      (dust-thickness ?dust-thickness-current)
+                      (dust-thickness ?dust-thickness-next)
+                      (dust-on-panels ?dust-thickness-current)
+                      (dust-next ?dust-thickness-current ?dust-thickness-next)
                  )
     :effect(and (at ?next-pos-x ?next-pos-y) 
                 (not (at ?current-pos-x ?current-pos-y)) 
@@ -76,6 +76,12 @@
                 (when (easy-soil ?current-pos-x ?current-pos-y) (battery-level ?battery ?level-next-easy))  
                 (when (medium-soil ?current-pos-x ?current-pos-y) (battery-level ?battery ?level-next-medium))
                 (when (hard-soil ?current-pos-x ?current-pos-y) (battery-level ?battery ?level-next-hard))               
+          
+                (when (dust-at ?next-pos-x ?next-pos-y)
+                      (and (not (dust-on-panels ?dust-thickness-current))
+                           (dust-on-panels ?dust-thickness-next)
+                      )
+                )
            )
 )
 
@@ -206,6 +212,7 @@
     :parameters (?storage ?pos-x ?pos-y
                  ?battery ?level-current ?level-next-easy)
     :precondition (and (loc ?pos-x) (loc ?pos-y)
+                       (at ?pos-x ?pos-y)
                        (image-storage ?storage)
                        (battery-level ?battery ?level-current)
                        (next-easy ?level-current ?level-next-easy)
@@ -218,32 +225,62 @@
 )
 ;;;;;;;;;;;;;;;;charging;;;;;;;;;;;;;;;;;;
 (:action charge
-    :parameters (?battery ?level-current ?level-next ?panel)
+    :parameters (?battery 
+                 ?panel
+                 ?dust-thickness
+                 ?level-current ?level-next
+                 ;?level-next-easy ?level-next-medium ?level-next-hard
+                )
     :precondition (and (battery ?battery) 
                        (level ?level-current) 
-                       (level ?level-next)
+                       ;(level ?level-next-easy)
+                       ;(level ?level-next-medium)
+                       ;(level ?level-next-hard)
                        (battery-level ?battery ?level-current)
                        (next-charge ?level-current ?level-next) 
                        (critical ?level-current)
                        (panel ?panel)
                        (panel-opened)
-                       ;(not (closed ?panel))
+                       (dust-thickness ?dust-thickness)
+                       (dust-on-panels ?dust-thickness)
+                       (not (max-dust-thickness ?dust-thickness))
+                       ;(next-hard ?level-current ?level-next-hard )   ;;biggest charge when no dust
+                       ;(next-medium ?level-current ?level-next-medium ) ;;medium charge when dust thickness thin
+                       ;(next-easy ?level-current ?level-next-easy)   ;;small charge when dust thickness medium
                   )
     :effect (and (not (battery-level ?battery ?level-current)) 
                  (battery-level ?battery ?level-next)
-                 ;(closed ?panel)
+
+               ;Code to only charge battery proportional with how much dust there is on the panels
+               ;Couldn't implement it because I surpassed the number of prdicates allowed
+               ;(when (none-dust-thickness ?dust-thickness) (battery-level ?battery ?level-next-hard))  
+               ;(when (min-dust-thickness ?dust-thickness) (battery-level ?battery ?level-next-medium))  
+               ;(when (medium-dust-thickness ?dust-thickness) (battery-level ?battery ?level-next-easy))  
             )
 )
 
 (:action open-panel
     :parameters (?panel)
+    :precondition (panel ?panel)
+    :effect (and (when (max-light ?panel) (panel-opened)))
+)
+
+(:action clean-panel
+    :parameters (?panel ?windwhirl-at
+                 ?current-pos-x ?current-pos-y
+                 ?dust-thickness-current ?dust-thickness-next)
     :precondition (and (panel ?panel)
-                       (closed ?panel)
+                       (at ?current-pos-x ?current-pos-y)
+                       (dust-thickness ?dust-thickness-current)
+                       (dust-thickness ?dust-thickness-next)
+                       (dust-next ?dust-thickness-next ?dust-thickness-current)
+                       (dust-on-panels ?dust-thickness-current)
                   )
-    :effect (and (when (max-light ?panel) 
-                 (and (not (closed ?panel)) (panel-opened)))
+    :effect ( when (windwhirl-at ?current-pos-x ?current-pos-y) 
+                   (and (not (dust-on-panels ?dust-thickness-current))
+                        (dust-on-panels ?dust-thickness-next)
+                   )
             )
-)
 
 )
-
+)

@@ -3,10 +3,10 @@
 (:objects x0 x1 x2 y0 y1 y2
           soil-container rock-container 
           battery
-          level-100 level-80 level-70 level-60 level-50 
-          level-40 level-30 level-20 level-10 level-0 
+          level-70 level-60 level-50 level-40 level-30 level-20 level-10 level-0 
           panel1 panel2 panel3 panel4
           soil storage
+          none thin medium thick
 )
 (:init 
     (loc x0)
@@ -16,24 +16,8 @@
     (loc y1)
     (loc y2)
 
-    ; (inc-x x0 x1)
-    ; (inc-x x1 x2)
-    ; (dec-x x2 x1)
-    ; (dec-x x1 x0)
-    ; (same x0 x0)
-    ; (same x1 x1)
-    ; (same x2 x2)
-
-    ; (inc-y y0 y1)
-    ; (inc-y y1 y2)
-    ; (dec-y y2 y1)
-    ; (dec-y y1 y0)
-    ; (same y0 y0)
-    ; (same y1 y1)
-    ; (same y2 y2)
-
     (at x0 y0)
-
+    
     (connection x0 x0)
     (connection x0 x1)
     (connection x1 x2)
@@ -89,9 +73,6 @@
     (empty soil-container)
     (empty rock-container)
      
-    ; (level level-100)
-    ; (level level-90)
-    ; (level level-80)
     (level level-70)
     (level level-60)
     (level level-50)
@@ -156,6 +137,13 @@
     (next-charge level-60 level-70)
     (next-charge level-70 level-70)
 
+    (next-charge level-20 level-70)
+    (next-charge level-30 level-70)
+    (next-charge level-40 level-70)
+    (next-charge level-50 level-70)
+    (next-charge level-60 level-70)
+    (next-charge level-70 level-70)
+
     (critical level-20)
     (critical level-10)
     (critical level-0)
@@ -164,11 +152,6 @@
     (panel panel2)
     (panel panel3)
     (panel panel4)
-
-    (closed panel1)
-    (closed panel2)
-    (closed panel3)
-    (closed panel4)
 
     (unknown (max-light panel1))
     (unknown (max-light panel2))
@@ -181,6 +164,28 @@
         (max-light panel3)
         (max-light panel4)
     )
+
+    (dust-thickness none)
+    (dust-thickness thin)
+    (dust-thickness medium)
+    (dust-thickness thick)
+
+    (dust-next none thin)
+    (dust-next thin medium)
+    (dust-next medium thick)
+
+    (windwhirl-at x1 y1)
+    (windwhirl-at x1 y2)
+
+    (dust-at x1 y1)
+    (dust-at x0 y1)
+
+    (dust-on-panels none)
+
+    ;(none-dust-thickness none)
+    ;(min-dust-thickness thin)
+    ;(medium-dust-thickness medium)
+    (max-dust-thickness thick)
 )
 (:goal
     (and
@@ -193,8 +198,6 @@
         (image-taken x1 y2)
         (image-taken x0 y1)
         (image-taken x1 y1)
-        (panel-opened)
-        ;(not (closed panel2))
     )
 )
 )
